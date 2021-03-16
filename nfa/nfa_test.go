@@ -62,11 +62,29 @@ func langTransitions(st state, sym rune) []state {
 	}[st][sym]
 }
 
+func loopTransitions(st state, sym rune) []state {
+	/*
+	 * 0 -a-> 0
+	 * 0 -a-> 1
+	 * 1 -a-> 1
+	 * 1 -a-> 0
+	 */
+	return map[state]map[rune][]state{
+		0: map[rune][]state{
+			'a': []state{0, 1},
+		},
+		1: map[rune][]state{
+			'a': []state{0, 1},
+		},
+	}[st][sym]
+}
+
 func TestReachable(t *testing.T) {
 	nfas := map[string]TransitionFunction{
 		"dagTransitions":  dagTransitions,
 		"expTransitions":  expTransitions,
 		"langTransitions": langTransitions,
+		"loopTransitions": loopTransitions,
 	}
 
 	tests := []struct {
@@ -76,7 +94,7 @@ func TestReachable(t *testing.T) {
 		expected     bool
 	}{
 		{"dagTransitions", 0, 3, []rune{'a', 'b'}, true},
-		{"dagTransitions", 0, 3, []rune{'a', 'c'}, true},
+		{"dagTransitions", 0, 3, []rune{'a', 'c'}, true}, // 
 		{"dagTransitions", 0, 1, []rune{'a'}, true},
 		{"dagTransitions", 0, 0, nil, true},
 		{"dagTransitions", 0, 3, []rune{'a', 'a'}, false},
@@ -96,6 +114,8 @@ func TestReachable(t *testing.T) {
 		{"langTransitions", 0, 0, nil, true},
 		{"langTransitions", 0, 1, []rune{'a', 'a'}, false},
 		{"langTransitions", 0, 0, []rune{'a', 'b', 'a', 'a'}, false},
+
+		{"loopTransitions", 0, 0, []rune{'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a'}, true},
 
 		// TODO add more tests for 100% test coverage
 	}

@@ -1,4 +1,5 @@
 package nfa
+// import "sync"
 
 // A nondeterministic Finite Automaton (NFA) consists of states,
 // symbols in an alphabet, and a transition function.
@@ -11,7 +12,7 @@ type state uint
 // on reading the given symbol.
 // This set of next states could be empty.
 type TransitionFunction func(st state, sym rune) []state
-
+// var mu sync.Mutex
 // Reachable returns true if there exists a sequence of transitions
 // from `transitions` such that if the NFA starts at the start state
 // `start` it would reach the final state `final` after reading the
@@ -25,5 +26,54 @@ func Reachable(
 	input []rune,
 ) bool {
 	// TODO
-	panic("TODO: implement this!")
+	// panic("TODO: implement this!")
+	// defer close(result)
+	result := make(chan bool, 1)
+	go goReachable(transitions, start, final, input, result)
+	
+	return <- result
 }
+
+func goReachable(transitions TransitionFunction, start, final state, input []rune, result chan bool) bool {
+	if len(input) == 0 {
+		if start == final {
+			// send to channel only when its final step	
+			result <- true
+			return true
+		} else {
+			//result <- false
+			return false
+		}
+	} else {
+		next := transitions(start, input[0])
+		for _, next_state := range next {
+			if goReachable(transitions, next_state, final, input[1:], result){
+				//result <- true
+				return true
+			}
+		}
+	}
+
+	result <- false
+	return false
+}
+
+/* Given solution from HW#1
+func Reachable(	
+	transitions TransitionFunction,
+	start, final state,
+	input []rune,
+) bool {
+	if len(input) == 0 {
+		return start == final
+	}
+
+	for _, next := range transitions(start, input[0]) { 
+		if Reachable(transitions, next, final, input[1:]) {
+			return true
+		}
+	}
+
+	return false
+}
+*/
