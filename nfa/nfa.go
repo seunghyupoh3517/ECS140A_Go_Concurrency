@@ -1,5 +1,5 @@
 package nfa
-// import "sync"
+import "sync"
 
 // A nondeterministic Finite Automaton (NFA) consists of states,
 // symbols in an alphabet, and a transition function.
@@ -28,37 +28,52 @@ func Reachable(
 	// TODO
 	// panic("TODO: implement this!")
 	// defer close(result)
+	// var wg sync.WaitGroup
+
 	result := make(chan bool, 1)
-	go goReachable(transitions, start, final, input, result)
-	
+	//wg.Add(1)
+
+ 	goReachable(transitions, start, final, input, result)
+
+	//wg.Wait()
+	//close(result)
+
 	return <- result
 }
 
-func goReachable(transitions TransitionFunction, start, final state, input []rune, result chan bool) bool {
+func goReachable(transitions TransitionFunction, start, final state, input []rune, ,result chan bool) bool {
+	var wg sync.WaitGroup
 	if len(input) == 0 {
 		if start == final {
 			// send to channel only when its final step	
 			result <- true
 			return true
-		} else {
-			//result <- false
-			return false
 		}
+			//return true
+		// } else {
+		// 	//result <- false
+		// 	return false
+		// }
 	} else {
 		next := transitions(start, input[0])
 		for _, next_state := range next {
-			if goReachable(transitions, next_state, final, input[1:], result){
-				//result <- true
-				return true
-			}
+			wg.Add(1)
+			go goReachable(transitions, next_state, final, input[1:], result)	
+					
 		}
+		
+		//wg.Wait() 
 	}
-
-	result <- false
+	wg.Done()
+	
+ 	
+	// result <- false
+	//wg.Done()
 	return false
 }
 
 /* Given solution from HW#1
+
 func Reachable(	
 	transitions TransitionFunction,
 	start, final state,
