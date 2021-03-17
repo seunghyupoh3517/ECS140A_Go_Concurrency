@@ -60,9 +60,9 @@ func goReachable(transitions TransitionFunction, start, final state, input []run
 			routine_counter++
 			mu.Unlock()
 
-			// restric the level of concurrency by limit the go routines to 10
+			// restric the level of concurrency by limit the go routines to 60
 			// otherwise the concureency level will be 2^40 go routines(worst case) for the extra test case.
-			if counter < 10 {
+			if counter < 60 {
 				go func(next_state state) {
 					goReachable(transitions, next_state, final, input[1:], result)
 					wg.Done()
