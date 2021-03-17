@@ -2,7 +2,7 @@ package nfa
 
 import (
 	"sync"
-	"fmt"
+	// "fmt"
 )
 
 // A nondeterministic Finite Automaton (NFA) consists of states,
@@ -17,6 +17,9 @@ type state uint
 // This set of next states could be empty.
 type TransitionFunction func(st state, sym rune) []state
 var root state
+var routine_counter int		// use to count how many threads we create
+var mu sync.Mutex		// lock for the counter
+
 // Reachable returns true if there exists a sequence of transitions
 // from `transitions` such that if the NFA starts at the start state
 // `start` it would reach the final state `final` after reading the
@@ -45,17 +48,11 @@ func Reachable(
 
 func goReachable(transitions TransitionFunction, start, final state, input []rune, result chan bool) {
 
-	not_continue := <- result
-	if not_continue {
-		result <- not_continue
-		return
-	}
-
 	var wg sync.WaitGroup
 	if len(input) == 0 {
 		if start == final {
 			// send to channel only when its final step
-			fmt.Println(" *** WRITE true!!!")
+			// fmt.Println(" *** WRITE true!!!")
 			result <- true
 			// close(result)
 		
@@ -70,14 +67,26 @@ func goReachable(transitions TransitionFunction, start, final state, input []run
 		next := transitions(start, input[0])
 
 		wg.Add(len(next))
+		// fmt.Println(" $$$ Add():", len(next))
 		for i, _ := range next {
+			// fmt.Println(" $$$ index i =",i)
 
-			go func(next_state state) {
-				goReachable(transitions, next_state, final, input[1:], result)
-				fmt.Println(" *** Test Concurrency!!!!")
+			var counter = 0
+			mu.Lock()
+			counter = routine_counter
+			routine_counter++
+			mu.Unlock()
+
+			if counter < 10 {
+				go func(next_state state) {
+					// fmt.Println(" *** Test Concurrency!!!!")
+					goReachable(transitions, next_state, final, input[1:], result)
+					wg.Done()
+				}(next[i])
+			} else {
+				goReachable(transitions, next[i], final, input[1:], result)
 				wg.Done()
-			}(next[i])
-					
+			}			
 		}	
 		wg.Wait() 
 	}
@@ -85,7 +94,7 @@ func goReachable(transitions TransitionFunction, start, final state, input []run
 	// only one place can WRITE false, which is the root
 	if start == root {
 		// if _, ok := <- result; ok {
-			fmt.Println(" $$$ WRITE false!!!")
+			// fmt.Println(" $$$ WRITE false!!!")
 			result <- false
 		// }
 	}
