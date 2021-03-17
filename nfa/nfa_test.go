@@ -94,7 +94,7 @@ func TestReachable(t *testing.T) {
 		expected     bool
 	}{
 		{"dagTransitions", 0, 3, []rune{'a', 'b'}, true},
-		{"dagTransitions", 0, 3, []rune{'a', 'c'}, true}, // 
+		{"dagTransitions", 0, 3, []rune{'a', 'c'}, true}, 
 		{"dagTransitions", 0, 1, []rune{'a'}, true},
 		{"dagTransitions", 0, 0, nil, true},
 		{"dagTransitions", 0, 3, []rune{'a', 'a'}, false},
