@@ -34,13 +34,13 @@ func Reachable(
 	root = start
  	go goReachable(transitions, start, final, input, result)
 	
-	if val, ok := <- result; ok {
-		fmt.Println(" $$$ In the main !! !!!")
-		close(result)
-		return val
-	}
+	// if val, ok := <- result; ok {
+	// 	fmt.Println(" $$$ In the main !! !!!")
+	// 	close(result)
+	// 	return val
+	// }
 
-	return false
+	return <- result
 }
 
 func goReachable(transitions TransitionFunction, start, final state, input []rune, result chan bool) {
