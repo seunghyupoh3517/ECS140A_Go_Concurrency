@@ -2,7 +2,6 @@ package nfa
 
 import (
 	"sync"
-	// "fmt"
 )
 
 // A nondeterministic Finite Automaton (NFA) consists of states,
@@ -36,12 +35,6 @@ func Reachable(
 
 	root = start
  	go goReachable(transitions, start, final, input, result)
-	
-	// if val, ok := <- result; ok {
-	// 	fmt.Println(" $$$ In the main !! !!!")
-	// 	close(result)
-	// 	return val
-	// }
 
 	return <- result
 }
@@ -52,24 +45,14 @@ func goReachable(transitions TransitionFunction, start, final state, input []run
 	if len(input) == 0 {
 		if start == final {
 			// send to channel only when its final step
-			// fmt.Println(" *** WRITE true!!!")
 			result <- true
-			// close(result)
-		
-			// if _, ok := <- result; ok {
-			// 	fmt.Println(" $$$ WRITE true!!!")
-			// 	result <- true
-			// 	close(result)
-			// }	
 			return
 		} 
 	} else {
 		next := transitions(start, input[0])
 
 		wg.Add(len(next))
-		// fmt.Println(" $$$ Add():", len(next))
 		for i, _ := range next {
-			// fmt.Println(" $$$ index i =",i)
 
 			var counter = 0
 			mu.Lock()
@@ -77,9 +60,10 @@ func goReachable(transitions TransitionFunction, start, final state, input []run
 			routine_counter++
 			mu.Unlock()
 
+			// restric the level of concurrency by limit the go routines to 10
+			// otherwise the concureency level will be 2^40 go routines(worst case) for the extra test case.
 			if counter < 10 {
 				go func(next_state state) {
-					// fmt.Println(" *** Test Concurrency!!!!")
 					goReachable(transitions, next_state, final, input[1:], result)
 					wg.Done()
 				}(next[i])
@@ -93,10 +77,7 @@ func goReachable(transitions TransitionFunction, start, final state, input []run
 
 	// only one place can WRITE false, which is the root
 	if start == root {
-		// if _, ok := <- result; ok {
-			// fmt.Println(" $$$ WRITE false!!!")
 			result <- false
-		// }
 	}
 
 	return
