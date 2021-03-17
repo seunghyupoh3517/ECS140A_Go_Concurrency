@@ -2,7 +2,7 @@ package nfa
 
 import (
 	"sync"
-	// "fmt"
+	"fmt"
 )
 
 // A nondeterministic Finite Automaton (NFA) consists of states,
@@ -29,21 +29,41 @@ func Reachable(
 	// `input` is a (possible empty) list of symbols to apply.
 	input []rune,
 ) bool {
-	result := make(chan bool, 1)
+	result := make(chan bool)
 
 	root = start
  	go goReachable(transitions, start, final, input, result)
+	
+	if val, ok := <- result; ok {
+		fmt.Println(" $$$ In the main !! !!!")
+		close(result)
+		return val
+	}
 
-	return <- result
+	return false
 }
 
 func goReachable(transitions TransitionFunction, start, final state, input []rune, result chan bool) {
 
+	not_continue := <- result
+	if not_continue {
+		result <- not_continue
+		return
+	}
+
 	var wg sync.WaitGroup
 	if len(input) == 0 {
 		if start == final {
-			// send to channel only when its final step	
+			// send to channel only when its final step
+			fmt.Println(" *** WRITE true!!!")
 			result <- true
+			// close(result)
+		
+			// if _, ok := <- result; ok {
+			// 	fmt.Println(" $$$ WRITE true!!!")
+			// 	result <- true
+			// 	close(result)
+			// }	
 			return
 		} 
 	} else {
@@ -54,6 +74,7 @@ func goReachable(transitions TransitionFunction, start, final state, input []run
 
 			go func(next_state state) {
 				goReachable(transitions, next_state, final, input[1:], result)
+				fmt.Println(" *** Test Concurrency!!!!")
 				wg.Done()
 			}(next[i])
 					
@@ -63,7 +84,10 @@ func goReachable(transitions TransitionFunction, start, final state, input []run
 
 	// only one place can WRITE false, which is the root
 	if start == root {
-		result <- false
+		// if _, ok := <- result; ok {
+			fmt.Println(" $$$ WRITE false!!!")
+			result <- false
+		// }
 	}
 
 	return
